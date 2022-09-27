@@ -1,17 +1,23 @@
 const db = require("../../db");
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const env=require('dotenv').config();
+const multer = require("multer");
+const ejs = require("ejs");
+const path = require("path");
+const {uploads} = require('./upload');
+
 
 exports.getData = (req, res) => {
   db.query("select * from users where deleted_at is null", (err, result) => {
     console.log("result is :", result);
-    res.send({result, email:req.user});
+    res.send({ result, email: req.user });
   });
 };
 
 exports.signup = async (req, res) => {
   const salt = await bcrypt.genSalt(10);
-  const secpass = await bcrypt.hash(req.body.password , salt) ;
+  const secpass = await bcrypt.hash(req.body.password, salt);
 
   const data = {
     first_name: req.body.first_name,
@@ -38,29 +44,34 @@ exports.signup = async (req, res) => {
   );
 };
 
-exports.login = (req, res) => {
-  const {email, password} = req.body;
+exports.login = async (req, res) => {
 
-  try{
-    const user =db.query(`select * from users where email = ?`, [email]);
-        
-          if (!user) {
-            res.status(400).json({ message: "login email is not found" });
-          } 
-        const passwordCompare = bcrypt.compare(password, user.password )
-        if(!passwordCompare){
-            res.status(400).json({ message: "login email is not found" });
-             
-            } else{
-                const token =jwt.sign({email:data.email},"MERNSTACKDE",{expiresIn:'1h'});
+  const {email,password} = req.body;
+  try {
+ db.query(`select * from users where email = ?`,[email],async(err,result)=>{
+    if(!result[0]){
+        res.status(400).json({ message: "login email is not found" });
+    }
+     await bcrypt.compare(password, result[0].password).then(result=>{
+    console.log(result)
+        if(!result){
+            res.status(400).json({ message: "incorrect password" });
+            }else{
+                const data ={
+                    result:{
+                        email:result.email
+                    }
+                }
+                const token =jwt.sign(data,process.env.JWT_SECRET,{expiresIn:'1h'});
                 res.send({message:"successfully login", token})
             }
-          
+    }
+ )
+});
+  } catch (error) {
+     console.error(err.message);
+     res.status(500).send("internal server error accured")
   }
-  catch{}
-
-
-
- 
-
+    
 };
+
