@@ -2,10 +2,8 @@ const db = require("../../db");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const env=require('dotenv').config();
-const multer = require("multer");
-const ejs = require("ejs");
-const path = require("path");
-const {uploads} = require('./upload');
+const multer = require('multer');
+const path = require('path')
 
 
 exports.getData = (req, res) => {
@@ -75,3 +73,30 @@ exports.login = async (req, res) => {
     
 };
 
+
+
+exports.fileupload = multer({
+    storage: multer.diskStorage({
+        destination:function(req,file,cb){
+            cb(null, "upload")
+        },
+        filename: function (req,file,cb){
+            cb(null, file.fieldname + "-" + Date.now() + path.extname(file.originalname))
+        },
+        fileFilter:function (req,file, cb) {
+                const filetypes = /jpeg|jpg|png|gif/;
+                const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+                const mimetype = filetypes.test(file.mimetype);
+                if (mimetype && extname) {
+                  return cb(null, true);
+                } else {
+                  cb("Error: Images only!");
+                }
+              },
+    })
+}).single("user_file");
+  
+
+exports.upload=(req, res)=>{
+    res.send("upload port is working")
+}
