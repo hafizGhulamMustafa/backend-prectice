@@ -1,6 +1,7 @@
 const express = require('express');
 const dbConnection = require('./db');
 const auth = require('./routes/auth');
+const path = require('path');
 
 const app = express();
 
@@ -15,6 +16,7 @@ dbConnection.connect((error, result)=>{
 })
 
 app.use(express.json());
+app.use('/public', express.static(path.join(__dirname, 'uploads')));
 
 
 
